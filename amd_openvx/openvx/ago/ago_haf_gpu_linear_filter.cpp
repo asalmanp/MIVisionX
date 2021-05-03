@@ -272,7 +272,7 @@ int HafGpu_LinearFilter_ANY_U8(AgoNode * node, vx_df_image dst_image_format, Ago
 			sprintf(item,
 				OPENCL_FORMAT(
 				"typedef struct { float f[%d]; } COEF_%dx%d;\n"
-				"void %s(%sx8 * r, uint x, uint y, __local uchar * lbuf, __global uchar * p, uint stride, COEF_%dx%d coef) {\n"
+				"void %s(%sx8 * r, uint x, uint y, __local uchar * lbuf, __global uchar * p, uint stride, uint srcBuffOffset, uint srcBuffSize, COEF_%dx%d coef) {\n"
 				), filterWidth*filterHeight, filterWidth, filterHeight, node->opencl_name, dstRegType, filterWidth, filterHeight);
 		}
 		code = item;

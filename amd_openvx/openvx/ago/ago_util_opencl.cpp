@@ -662,6 +662,13 @@ static int agoGpuOclSetKernelArgs(cl_kernel opencl_kernel, vx_uint32& kernelArgI
                 return -1; 
             }
             kernelArgIndex++;
+            err = clSetKernelArg(opencl_kernel, (cl_uint)kernelArgIndex, 4, &data->size);
+            if (err) {
+                agoAddLogEntry(&data->ref, VX_FAILURE, "ERROR: clSetKernelArg(supernode,%d,*,size) failed(%d) for group#%d\n", (cl_uint)kernelArgIndex, err, group);
+                return -1;
+            }
+            kernelArgIndex++;
+
         }
     }
     else if (data->ref.type == VX_TYPE_ARRAY) {
@@ -906,7 +913,7 @@ static int agoGpuOclDataInputSync(AgoGraph * graph, cl_kernel opencl_kernel, vx_
                     return -1;
                 }
             }
-            kernelArgIndex += 3;
+            kernelArgIndex += 4;
             if (need_read_access) {
                 auto dataToSync = data->u.img.isROI ? data->u.img.roiMasterImage : data;
                 if (!(dataToSync->buffer_sync_flags & AGO_BUFFER_SYNC_FLAG_DIRTY_SYNCHED)) {
@@ -1322,7 +1329,7 @@ static std::string agoGpuOclData2Decl(AgoData * data, vx_uint32 index, vx_uint32
             sprintf(item, "uint p%d_width, uint p%d_height, ", index, index);
             code += item;
         }
-        sprintf(item, "__global uchar * p%d_buf, uint p%d_stride, uint p%d_offset", index, index, index);
+        sprintf(item, "__global uchar * p%d_buf, uint p%d_stride, uint p%d_offset, uint p%d_size", index, index, index, index);
         code += item;
         if (dataFlags & DATA_OPENCL_FLAG_NEED_LOCAL) {
             sprintf(item, ", __local uchar * p%d_lbuf", index);
@@ -2034,7 +2041,7 @@ int agoGpuOclSuperNodeFinalize(AgoGraph * graph, AgoSuperNode * supernode)
                             sprintf(item, ", p%d_lbuf", (int)data_index);
                             code += item;
                         }
-                        sprintf(item, ", p%d_buf, p%d_stride", (int)data_index, (int)data_index);
+                        sprintf(item, ", p%d_buf, p%d_stride, p%d_offset, p%d_size", (int)data_index, (int)data_index, (int)data_index, (int)data_index);
                         code += item;
                         if (supernode->dataInfo[data_index].data_type_flags & NODE_OPENCL_TYPE_NEED_IMGSIZE) {
                             sprintf(item, ", p%d_width, p%d_height", (int)data_index, (int)data_index);

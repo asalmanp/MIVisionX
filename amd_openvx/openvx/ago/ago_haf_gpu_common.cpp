@@ -89,11 +89,13 @@ int HafGpu_Load_Local(int WGWidth, int WGHeight, int LMWidth, int LMHeight, int 
 			agoAddLogEntry(NULL, VX_FAILURE, "ERROR: HafGpu_Load_Local(%dx%d,%dx%d,(%d,%d)): doesn't support LMWidthRemain=%d with %s\n", WGWidth, WGHeight, LMWidth, LMHeight, gxoffset, gyoffset, LMWidthRemain, dType);
 			return -1;
 		}
-		if (use_vload) {
-			sprintf(item, "    *(__local %s *)(lbuf + loffset) = vload%c(0, (__global uint *)(gbuf + goffset));\n", dType, dType[4]);
+        sprintf(item, "    if (goffset > -srcBuffOffset && goffset < srcBuffSize)\n");
+        code += item;
+        if (use_vload) {
+            sprintf(item, "      *(__local %s *)(lbuf + loffset) = vload%c(0, (__global uint *)(gbuf + goffset));\n", dType, dType[4]);
 		}
 		else {
-			sprintf(item, "    *(__local %s *)(lbuf + loffset) = *(__global %s *)(gbuf + goffset);\n", dType, dType);
+			sprintf(item, "      *(__local %s *)(lbuf + loffset) = *(__global %s *)(gbuf + goffset);\n", dType, dType);
 		}
 		code += item;
 		// get configuration for extra load
@@ -118,7 +120,7 @@ int HafGpu_Load_Local(int WGWidth, int WGHeight, int LMWidth, int LMHeight, int 
 			"      goffset = (gy - ly + ry - %d) * gstride + ((gx - lx + rx) << %d) + %d;\n" // gyoffset, dTypeShift, (WGWidth << LMdivWGWidthShift) - gxoffset
 			"      doExtraLoad = (ry < %d) ? true : false;\n" // LMHeight
 			"    }\n"
-			"    if (doExtraLoad) {\n")
+			"    if (doExtraLoad && goffset > -srcBuffOffset && goffset < srcBuffSize) {\n")
 			, LMHeight - WGHeight, WGHeight, LMWidth, WGHeight
 			, LMHeight - WGHeight, WGWidth, (dWidthShift < 0) ? "/" : ">>", (dWidthShift < 0) ? dWidth : dWidthShift, (dWidthShift < 0) ? "- ry *" : "&", (dWidthShift < 0) ? dWidth : dWidth - 1
 			, LMWidth, dTypeShift, (WGWidth << LMdivWGWidthShift)
